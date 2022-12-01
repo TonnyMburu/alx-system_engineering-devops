@@ -1,0 +1,2 @@
+#!/bin/bash
+chown --from=gui11aume betty hello
