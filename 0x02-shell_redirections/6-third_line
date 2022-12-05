@@ -1,0 +1,2 @@
+#!/bin/bash
+tail -3 file_name | tail -1
