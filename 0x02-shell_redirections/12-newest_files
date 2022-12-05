@@ -1,0 +1,2 @@
+#!/bin/bash
+ls -t b2* | head -1
