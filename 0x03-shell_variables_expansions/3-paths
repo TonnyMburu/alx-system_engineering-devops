@@ -1,2 +1,2 @@
 #!/bin/bash
-touch $PATH | tr ':' '\n' | WC -1
+$ find /etc -type f | wc -l
