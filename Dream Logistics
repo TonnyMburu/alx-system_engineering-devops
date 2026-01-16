@@ -1,0 +1,63 @@
+import sqlite3
+from datetime import datetime
+
+class TruckSystem:
+    def __init__(self, db_name="fleet_management.db"):
+        self.conn = sqlite3.connect(db_name)
+        self.cursor = self.conn.cursor()
+        self.setup_database()
+
+    def setup_database(self):
+        """Creates tables for trucks, trips, and expenses."""
+        self.cursor.execute('''CREATE TABLE IF NOT EXISTS trucks 
+                            (id INTEGER PRIMARY KEY, truck_number TEXT, model TEXT)''')
+        
+        self.cursor.execute('''CREATE TABLE IF NOT EXISTS trips 
+                            (id INTEGER PRIMARY KEY, truck_id INTEGER, miles REAL, 
+                             revenue REAL, fuel_cost REAL, other_costs REAL, 
+                             date TEXT, FOREIGN KEY(truck_id) REFERENCES trucks(id))''')
+        self.conn.commit()
+
+    def add_truck(self, truck_number, model):
+        self.cursor.execute("INSERT INTO trucks (truck_number, model) VALUES (?, ?)", (truck_number, model))
+        self.conn.commit()
+
+    def log_trip(self, truck_id, miles, revenue, fuel_cost, other_costs):
+        date = datetime.now().strftime("%Y-%m-%d")
+        self.cursor.execute("INSERT INTO trips (truck_id, miles, revenue, fuel_cost, other_costs, date) VALUES (?, ?, ?, ?, ?, ?)",
+                            (truck_id, miles, revenue, fuel_cost, other_costs))
+        self.conn.commit()
+
+    def get_sustainability_report(self):
+        """Calculates total profitability and Cost Per Mile."""
+        self.cursor.execute("""
+            SELECT 
+                t.truck_number,
+                SUM(tr.miles) as total_miles,
+                SUM(tr.revenue) as total_rev,
+                SUM(tr.fuel_cost + tr.other_costs) as total_costs
+            FROM trucks t
+            JOIN trips tr ON t.id = tr.truck_id
+            GROUP BY t.id
+        """)
+        rows = self.cursor.fetchall()
+        
+        print("\n--- Business Sustainability Report ---")
+        for row in rows:
+            name, miles, rev, costs = row
+            profit = rev - costs
+            cpm = costs / miles if miles > 0 else 0
+            status = "SUSTAINABLE" if profit > 0 else "WARNING: LOSS"
+            
+            print(f"Truck: {name}")
+            print(f"  Total Miles: {miles}")
+            print(f"  Net Profit: ${profit:.2f}")
+            print(f"  Cost Per Mile: ${cpm:.2f}")
+            print(f"  Status: {status}\n")
+
+# Example Usage
+if __name__ == "__main__":
+    fleet = TruckSystem()
+    # fleet.add_truck("TRK-001", "Freightliner Cascadia")
+    # fleet.log_trip(1, 1200, 3500, 800, 200) # 1200 miles, $3500 revenue, $1000 total costs
+    fleet.get_sustainability_report()
